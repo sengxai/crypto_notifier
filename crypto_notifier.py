@@ -65,7 +65,19 @@ class CMC:
 
         print("getBitcoin() Initial price: " + str(price) +"\n")
 
-    
+    def getCurrentPrice(self):
+
+        # Declaring the global variable
+
+        global currentPrice 
+
+        #Getting the response
+
+        url = self.url + f"/api/v1/market/orderbook/level1?symbol={ticker}"
+
+        currentPrice = float(self.session.get(url).json()['data']['price'])
+
+        print("getCurrentPrice() Current Price " + str(currentPrice))
                 
 def sendEmail():
     
@@ -125,7 +137,18 @@ def sendEmail():
 def startProgram():
 
     cmc.getInitialPrice()
+    
+    percentage = 0
 
+    while percentage < 1 and percentage > -1:
+
+        print(f"{current_time}:: Getting current price of {ticker}...\n")
+
+        time.sleep(10)
+
+        cmc.getCurrentPrice()
+        
+        
     #sendEmail()
 
 def main():

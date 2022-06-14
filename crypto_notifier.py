@@ -1,7 +1,26 @@
 """"
-    Just a simple program to email whoever/SMS email.
-    Just modify the recipient
-"""
+    Just a simple price notifier that sends out emails.
+
+    Uses Kucoins API to get current prices from Kucoin
+    If it hits a certain percentage/threshold it
+    sends an email to your email or a phone #.
+    
+    Future implementations: 
+    
+    (1) Code cleanup
+    
+    (2) After a certain amount of time
+    or after a newer low point make that the initial price then
+    compare to the current price.
+    
+    (3) Implement algorithmic paper trades.
+
+    (4) Get 24 hour chart price and get the percentage gains/loss of current price
+
+    (5) More functions...
+    
+    https://python-kucoin.readthedocs.io/en/latest/overview.html#register-on-kucoin
+    https://docs.kucoin.com/#general"""
 
 import smtplib
 import secrets
@@ -20,7 +39,7 @@ low = -1
 ticker = "BTC-USDT"
 fnow = datetime.now()
 current_time = fnow.strftime("%H:%M:%S")
-
+    
 class CMC:
     def __init__(self, token):
         
@@ -64,6 +83,7 @@ class CMC:
         price = float(self.session.get(url).json()['data']['price'])
 
         print("getBitcoin() Initial price: " + str(price) +"\n")
+        
 
     def getCurrentPrice(self):
 
@@ -79,17 +99,24 @@ class CMC:
 
         print("getCurrentPrice() Current Price " + str(currentPrice))
                 
-def sendEmail():
+
+def sendEmail(currentPrice):
     
     email = secrets.GMAIL                    # your email
     password = secrets.G_PASS                # IF 2FA then input your generated email application password
     host = 'smtp.gmail.com'                 # SMTP server of your email provider
     port = '587'                            # SMTP port
-    rcpt = secrets.RCPT 
+    rcpt = secrets.RCPT
 
-    #rcpt = input("Enter in recipients address: ") 
+    if currentPrice > 0:
+        trend = "up"
+    else:
+        trend = "down"
 
-    message = input("Enter in your message: ")
+    # https://stackoverflow.com/questions/35624537/how-to-remove-x-cmae-envelope-from-php-mail
+    # Helps remove the X-CMAE-Envelope when adding a colon ":", sending from gmail to a verizon phone #
+    
+    message = (f"\r\n\r\nIt has gone {trend} {high}% current price: " + str(currentPrice) + "\r\n\r\n")
 
     # Sending Process
     try:
@@ -134,10 +161,17 @@ def sendEmail():
 
         print("Exiting...")
 
+
+"""
+    Gets the initial price then waits a few seconds to get 
+    the current price and updates it every few seconds.
+    Then it calculates the percentage gained or loss.
+    If it hits a certain percentage loss or gain then send an email/sms
+"""
 def startProgram():
 
     cmc.getInitialPrice()
-    
+
     percentage = 0
 
     while percentage < high and percentage > low:
@@ -151,8 +185,8 @@ def startProgram():
         percentage = calculatePercentage(percentage)
 
         printGainsLoss(percentage)
-
-    #sendEmail()
+    
+    sendEmail(currentPrice)
 
 def calculatePercentage(percentage):
 

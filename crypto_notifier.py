@@ -5,6 +5,67 @@
 
 import smtplib
 import secrets
+import base64
+import hmac
+import hashlib
+import time
+from datetime import datetime
+from requests import Session
+
+#Global variables
+price = 0
+currentPrice = 0
+high = 1
+low = -1
+ticker = "BTC-USDT"
+fnow = datetime.now()
+current_time = fnow.strftime("%H:%M:%S")
+
+class CMC:
+    def __init__(self, token):
+        
+        #   Defining URL
+
+        self.url = 'https://api.kucoin.com'
+        self.now = int(time.time() * 1000)
+        self.str_to_sign = str(self.now) + 'GET' + '/api/v1/accounts'
+
+        # Signing 
+
+        self.signature = base64.b64encode(hmac.new(secrets.API_SECRET.encode('utf-8'), self.str_to_sign.encode('utf-8'), hashlib.sha256).digest())
+
+        self.passphrase = base64.b64encode(hmac.new(secrets.API_SECRET.encode('utf-8'), secrets.API_PASSWORD.encode('utf-8'), hashlib.sha256).digest())
+
+        self.headers = {
+            "KC-API-SIGN": self.signature,
+            "KC-API-TIMESTAMP": str(self.now),
+            "KC-API-KEY": secrets.API_KEY,
+            "KC-API-PASSPHRASE": secrets.API_PASSWORD,
+            "KC-API-KEY-VERSION": "2"
+        }
+
+        # Making a session so I can just add the end points to whatever functions
+
+        self.session = Session()
+        self.session.headers.update(self.headers)
+
+    def getInitialPrice(self):
+
+        # Declaring the global variable
+        
+        global price 
+
+        print(f"{current_time}:: Getting initial price of {ticker}...")
+
+        #Getting the response
+
+        url = self.url + f"/api/v1/market/orderbook/level1?symbol={ticker}"
+        
+        price = float(self.session.get(url).json()['data']['price'])
+
+        print("getBitcoin() Initial price: " + str(price) +"\n")
+
+    
                 
 def sendEmail():
     
@@ -62,14 +123,18 @@ def sendEmail():
         print("Exiting...")
 
 def startProgram():
-    
-    sendEmail()
+
+    cmc.getInitialPrice()
+
+    #sendEmail()
 
 def main():
 
     startProgram()
 
 if __name__=="__main__":
+
+    cmc = CMC(secrets.API_KEY)
 
     main()
     

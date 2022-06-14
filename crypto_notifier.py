@@ -140,7 +140,7 @@ def startProgram():
     
     percentage = 0
 
-    while percentage < 1 and percentage > -1:
+    while percentage < high and percentage > low:
 
         print(f"{current_time}:: Getting current price of {ticker}...\n")
 
@@ -148,8 +148,27 @@ def startProgram():
 
         cmc.getCurrentPrice()
         
-        
+        percentage = calculatePercentage(percentage)
+
+        printGainsLoss(percentage)
+
     #sendEmail()
+
+def calculatePercentage(percentage):
+
+    percentage = (currentPrice - price) / price * 100
+
+    return percentage
+
+def printGainsLoss(percentage):
+
+    if(percentage < 0):
+
+        print("\x1b[1;31;40m" + "Percentage loss: " + str(percentage) + "\x1b[0m" + "\n")
+
+    else:
+
+        print("\x1b[1;32;40m" + "Percentage gain: " + str(percentage) + "\x1b[0m" + "\n")
 
 def main():
 

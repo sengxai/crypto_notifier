@@ -23,7 +23,7 @@
     https://docs.kucoin.com/#general"""
 
 import smtplib
-import secrets
+import secretInfo
 import base64
 import hmac
 import hashlib
@@ -51,15 +51,15 @@ class CMC:
 
         # Signing 
 
-        self.signature = base64.b64encode(hmac.new(secrets.API_SECRET.encode('utf-8'), self.str_to_sign.encode('utf-8'), hashlib.sha256).digest())
+        self.signature = base64.b64encode(hmac.new(secretInfo.API_SECRET.encode('utf-8'), self.str_to_sign.encode('utf-8'), hashlib.sha256).digest())
 
-        self.passphrase = base64.b64encode(hmac.new(secrets.API_SECRET.encode('utf-8'), secrets.API_PASSWORD.encode('utf-8'), hashlib.sha256).digest())
+        self.passphrase = base64.b64encode(hmac.new(secretInfo.API_SECRET.encode('utf-8'), secretInfo.API_PASSWORD.encode('utf-8'), hashlib.sha256).digest())
 
         self.headers = {
             "KC-API-SIGN": self.signature,
             "KC-API-TIMESTAMP": str(self.now),
-            "KC-API-KEY": secrets.API_KEY,
-            "KC-API-PASSPHRASE": secrets.API_PASSWORD,
+            "KC-API-KEY": secretInfo.API_KEY,
+            "KC-API-PASSPHRASE": secretInfo.API_PASSWORD,
             "KC-API-KEY-VERSION": "2"
         }
 
@@ -102,11 +102,11 @@ class CMC:
 
 def sendEmail(currentPrice):
     
-    email = secrets.GMAIL                    # your email
-    password = secrets.G_PASS                # IF 2FA then input your generated email application password
+    email = secretInfo.GMAIL                    # your email
+    password = secretInfo.G_PASS                # IF 2FA then input your generated email application password
     host = 'smtp.gmail.com'                 # SMTP server of your email provider
     port = '587'                            # SMTP port
-    rcpt = secrets.RCPT
+    rcpt = secretInfo.RCPT
 
     if currentPrice > 0:
         trend = "up"
@@ -210,7 +210,7 @@ def main():
 
 if __name__=="__main__":
 
-    cmc = CMC(secrets.API_KEY)
+    cmc = CMC(secretInfo.API_KEY)
 
     main()
     

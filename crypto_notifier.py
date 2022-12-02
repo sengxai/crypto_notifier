@@ -32,13 +32,9 @@ from datetime import datetime
 from requests import Session
 
 #Global variables
-price = 0
-currentPrice = 0
-high = 1
-low = -1
+
 ticker = "BTC-USDT"
-fnow = datetime.now()
-current_time = fnow.strftime("%H:%M:%S")
+
     
 class CMC:
     def __init__(self, token):
@@ -70,12 +66,6 @@ class CMC:
 
     def getInitialPrice(self):
 
-        # Declaring the global variable
-        
-        global price 
-
-        print(f"{current_time}:: Getting initial price of {ticker}...")
-
         #Getting the response
 
         url = self.url + f"/api/v1/market/orderbook/level1?symbol={ticker}"
@@ -83,13 +73,11 @@ class CMC:
         price = float(self.session.get(url).json()['data']['price'])
 
         print("getBitcoin() Initial price: " + str(price) +"\n")
+
+        return price
         
 
     def getCurrentPrice(self):
-
-        # Declaring the global variable
-
-        global currentPrice 
 
         #Getting the response
 
@@ -98,14 +86,16 @@ class CMC:
         currentPrice = float(self.session.get(url).json()['data']['price'])
 
         print("getCurrentPrice() Current Price " + str(currentPrice))
+
+        return currentPrice
                 
 
-def sendEmail(currentPrice):
+def sendEmail(currentPrice, perc):
     
     email = secretInfo.GMAIL                    # your email
     password = secretInfo.G_PASS                # IF 2FA then input your generated email application password
-    host = 'smtp.gmail.com'                 # SMTP server of your email provider
-    port = '587'                            # SMTP port
+    host = 'smtp.gmail.com'                     # SMTP server of your email provider
+    port = '587'                                # SMTP port
     rcpt = secretInfo.RCPT
 
     if currentPrice > 0:
@@ -116,7 +106,7 @@ def sendEmail(currentPrice):
     # https://stackoverflow.com/questions/35624537/how-to-remove-x-cmae-envelope-from-php-mail
     # Helps remove the X-CMAE-Envelope when adding a colon ":", sending from gmail to a verizon phone #
     
-    message = (f"\r\n\r\nIt has gone {trend} {high}% current price: " + str(currentPrice) + "\r\n\r\n")
+    message = (f"\r\n\r\n{ticker} has gone {trend} at least {perc}% current price: " + str(currentPrice) + "\r\n\r\n")
 
     # Sending Process
     try:
@@ -170,27 +160,54 @@ def sendEmail(currentPrice):
 """
 def startProgram():
 
-    cmc.getInitialPrice()
+    high = 1
+    low = -1
+
+    current_time = getCurrentTime()
+
+    print(f"{current_time}:: Getting initial price of {ticker}...")
+
+    initialPrice = cmc.getInitialPrice()
 
     percentage = 0
 
-    while percentage < high and percentage > low:
+    while(1):
+        current_time = getCurrentTime()
 
         print(f"{current_time}:: Getting current price of {ticker}...\n")
 
-        time.sleep(10)
-
-        cmc.getCurrentPrice()
+        currentPrice = cmc.getCurrentPrice()
         
-        percentage = calculatePercentage(percentage)
+        percentage = calculatePercentage(initialPrice, currentPrice)
 
-        printGainsLoss(percentage)
-    
-    sendEmail(currentPrice)
+        #between 5 - 10%  or between -5 to -10%
+        if((percentage >= 5 or percentage <= -5) and (percentage < 10 and percentage > -10)):
+            printGainsLoss(percentage)
+            sendEmail(currentPrice, percentage)
+            initialPrice = currentPrice
+            time.sleep(10)
 
-def calculatePercentage(percentage):
+        #more than -10 or 10%
+        elif(percentage >= 10 or percentage <= -10):
+            printGainsLoss(percentage)
+            sendEmail(currentPrice, percentage)
+            initialPrice = currentPrice
+            time.sleep(10)
 
-    percentage = (currentPrice - price) / price * 100
+        else:
+            printGainsLoss(percentage)
+            time.sleep(10)
+
+        
+def getCurrentTime():
+    fnow = datetime.now()
+    current_time = fnow.strftime("%H:%M:%S")
+
+    return current_time
+
+def calculatePercentage(initialPrice, currentPrice):
+
+    percentage = (currentPrice - initialPrice) / initialPrice * 100
 
     return percentage
 
@@ -200,9 +217,12 @@ def printGainsLoss(percentage):
 
         print("\x1b[1;31;40m" + "Percentage loss: " + str(percentage) + "\x1b[0m" + "\n")
 
-    else:
+    elif(percentage > 0):
 
         print("\x1b[1;32;40m" + "Percentage gain: " + str(percentage) + "\x1b[0m" + "\n")
+    
+    elif(percentage == 0):
+        print("\x1b[1;32;40m" + "Percentage did not gain: " + str(percentage) + "\x1b[0m" + "\n")
 
 def main():
 
